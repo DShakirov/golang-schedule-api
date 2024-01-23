@@ -1,7 +1,9 @@
 Doctors Schedule API documentation
 
 MODELS:
+
     Appointment 
+    
 	    DoctorID  UUID
 	    PatientID UUID
 	    CreatedAt time 
