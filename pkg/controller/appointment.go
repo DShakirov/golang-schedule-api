@@ -166,7 +166,7 @@ func UpdateAppointment(db *gorm.DB) func(c *gin.Context) {
 				return
 			}
 		}
-		//Creating notifications for both doctor and patient
+		//Creating appointment
 		appointment.DoctorID = body.DoctorID
 		appointment.DoctorEmail = body.DoctorEmail
 		appointment.PatientID = body.PatientID
@@ -177,22 +177,16 @@ func UpdateAppointment(db *gorm.DB) func(c *gin.Context) {
 			c.AbortWithError(http.StatusBadRequest, result.Error)
 			return
 		}
-		var doctor_notification model.Notification
-		doctor_notification.Type = "Change"
-		doctor_notification.UserID = appointment.DoctorID
-		doctor_notification.Text = "Appointment data changed"
-		if result := db.Save(&doctor_notification); result.Error != nil {
-			c.AbortWithError(http.StatusBadRequest, result.Error)
-			return
-		}
-		var patient_notification model.Notification
-		patient_notification.Type = "Change"
-		patient_notification.UserID = appointment.PatientID
-		patient_notification.Text = "Appointment data changed"
-		if result := db.Save(&patient_notification); result.Error != nil {
-			c.AbortWithError(http.StatusBadRequest, result.Error)
-			return
-		}
+		//Creating notifications for doctor and patient
+		notificationType := "Change"
+		notificationText := "Appointment data has changed"
+		doctorEmail := appointment.DoctorEmail
+		doctorID := appointment.DoctorID
+		patientEmail := appointment.PatientEmail
+		patientID := appointment.PatientID
+		utils.CreateNotification(db, notificationText, notificationType, doctorEmail, doctorID)
+		utils.CreateNotification(db, notificationText, notificationType, patientEmail, patientID)
+		c.JSON(http.StatusCreated, appointment)
 
 		c.JSON(http.StatusOK, appointment)
 	}
@@ -214,25 +208,18 @@ func DeleteAppointment(db *gorm.DB) func(c *gin.Context) {
 		if isDoctor != true {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "Only a doctor can delete appointment"})
 		}
+		//Creating notifications for both doctor and patient
+		notificationType := "Cancel"
+		notificationText := "Appointment data has cancelled"
+		doctorEmail := appointment.DoctorEmail
+		doctorID := appointment.DoctorID
+		patientEmail := appointment.PatientEmail
+		patientID := appointment.PatientID
+		utils.CreateNotification(db, notificationText, notificationType, doctorEmail, doctorID)
+		utils.CreateNotification(db, notificationText, notificationType, patientEmail, patientID)
 		//Deleting appointment
 		db.Delete(&appointment)
-		//Creating notifications for both doctor and patient
-		var doctor_notification model.Notification
-		doctor_notification.Type = "Delete"
-		doctor_notification.UserID = appointment.DoctorID
-		doctor_notification.Text = "Appointment has been cancelled"
-		if result := db.Save(&doctor_notification); result.Error != nil {
-			c.AbortWithError(http.StatusBadRequest, result.Error)
-			return
-		}
-		var patient_notification model.Notification
-		patient_notification.Type = "Delete"
-		patient_notification.UserID = appointment.PatientID
-		patient_notification.Text = "Appointment has ben cancelled"
-		if result := db.Save(&patient_notification); result.Error != nil {
-			c.AbortWithError(http.StatusBadRequest, result.Error)
-			return
-		}
+
 		c.JSON(http.StatusNoContent, gin.H{"msg": "Appointment succesfully deleted"})
 	}
 }
