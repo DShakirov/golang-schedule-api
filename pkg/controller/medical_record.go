@@ -2,6 +2,7 @@ package controller
 
 import (
 	"ScheduleAPI/pkg/model"
+	"ScheduleAPI/pkg/utils"
 	"errors"
 	"net/http"
 
@@ -11,8 +12,9 @@ import (
 )
 
 type AddMedicalRecordRequestBody struct {
-	PatientID uuid.UUID `json:"patient_id"`
-	Text      string    `json:"text"`
+	PatientID    uuid.UUID `json:"patient_id"`
+	PatientEmail string    `json:"patient_email"`
+	Text         string    `json:"text"`
 }
 
 func GetMedicalRecorsList(db *gorm.DB) func(c *gin.Context) {
@@ -41,7 +43,8 @@ func CreateMedicalRecord(db *gorm.DB) func(c *gin.Context) {
 	//Only a doctor can create MedicalRecord
 	//IMPORTANT: Structure of request
 	//{"text": "deadly hemmoroids diagnosed",
-	//"patient_id": "0ec638e3-c9aa-4fd3-9f6d-a738a42a9b5b"}
+	//"patient_id": "0ec638e3-c9aa-4fd3-9f6d-a738a42a9b5b",
+	//"patient_email": "patient@test.com"}
 	//USE POST METHOD
 	return func(c *gin.Context) {
 		//Retrieving request body
@@ -55,12 +58,21 @@ func CreateMedicalRecord(db *gorm.DB) func(c *gin.Context) {
 		if isDoctor != true {
 			c.AbortWithError(http.StatusBadRequest, errors.New("Only a doctor can create medical record"))
 		}
-		//Fetching user id
+		//Fetching user id and email
 		uuidParam := c.MustGet("uuid").(uuid.UUID)
+		doctorEmail := c.MustGet("email").(string)
+		//checking patient email
+		patientEmail := body.PatientEmail
+		validatePatientEmail := utils.IsValidEmail(patientEmail)
+		if validatePatientEmail != true {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid patient email"})
+		}
 		//Creating MedicalRecord object
 		var medicalRecord model.MedicalRecord
 		medicalRecord.DoctorID = uuidParam
+		medicalRecord.DoctorEmail = doctorEmail
 		medicalRecord.PatientID = body.PatientID
+		medicalRecord.PatientEmail = body.PatientEmail
 		medicalRecord.Text = body.Text
 		if result := db.Create(&medicalRecord); result.Error != nil {
 			c.AbortWithError(http.StatusNotFound, result.Error)
@@ -76,7 +88,8 @@ func UpdateMedicalRecord(db *gorm.DB) func(c *gin.Context) {
 	//IMPORTANT: Structure of request
 	//NOTE: Go serializes duration in nanoseconds
 	//{"text": "lightly hemmoroids",
-	//"patient_id": "0ec638e3-c9aa-4fd3-9f6d-a738a42a9b5b"}
+	//"patient_id": "0ec638e3-c9aa-4fd3-9f6d-a738a42a9b5b",
+	//"patient_email": "patient@test.com"}
 	//USE PUT METHOD
 	return func(c *gin.Context) {
 		//Fetch medical record
@@ -99,9 +112,19 @@ func UpdateMedicalRecord(db *gorm.DB) func(c *gin.Context) {
 			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
+		//fetching user email
+		doctorEmail := c.MustGet("email").(string)
+		//checking patient email
+		patientEmail := body.PatientEmail
+		validatePatientEmail := utils.IsValidEmail(patientEmail)
+		if validatePatientEmail != true {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid patient email"})
+		}
 		//Updating MedicalRecord object
 		medicalRecord.DoctorID = uuidParam
+		medicalRecord.DoctorEmail = doctorEmail
 		medicalRecord.PatientID = body.PatientID
+		medicalRecord.PatientEmail = body.PatientEmail
 		medicalRecord.Text = body.Text
 		if result := db.Save(&medicalRecord); result.Error != nil {
 			c.AbortWithError(http.StatusNotFound, result.Error)

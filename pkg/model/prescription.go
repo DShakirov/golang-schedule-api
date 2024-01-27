@@ -9,10 +9,12 @@ import (
 
 type Prescription struct {
 	gorm.Model
-	DrugName  string
-	Dosage    string
-	Duration  time.Duration
-	DoctorID  uuid.UUID
-	PatientID uuid.UUID
-	CreatedAt time.Time `gorm:"autoCreateTime"`
+	DrugName     string
+	Dosage       string
+	Duration     time.Duration
+	DoctorID     uuid.UUID
+	DoctorEmail  string
+	PatientID    uuid.UUID
+	PatientEmail string
+	CreatedAt    time.Time `gorm:"autoCreateTime"`
 }

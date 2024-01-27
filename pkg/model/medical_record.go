@@ -9,8 +9,10 @@ import (
 
 type MedicalRecord struct {
 	gorm.Model
-	DoctorID  uuid.UUID
-	PatientID uuid.UUID
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	Text      string
+	DoctorID     uuid.UUID
+	DoctorEmail  string
+	PatientID    uuid.UUID
+	PatientEmail string
+	CreatedAt    time.Time `gorm:"autoCreateTime"`
+	Text         string
 }

@@ -11,6 +11,7 @@ type Notification struct {
 	gorm.Model
 	Type      string
 	UserID    uuid.UUID
+	UserEmail string
 	CreatedAt time.Time `gorm:"autoCreateTime"`
 	Text      string
 }

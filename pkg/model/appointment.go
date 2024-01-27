@@ -9,9 +9,11 @@ import (
 
 type Appointment struct {
 	gorm.Model
-	DoctorID  uuid.UUID
-	PatientID uuid.UUID
-	CreatedAt time.Time `gorm:"autoCreateTime"`
-	TimeStart time.Time
-	TimeEnd   time.Time
+	DoctorID     uuid.UUID
+	DoctorEmail  string
+	PatientID    uuid.UUID
+	PatientEmail string
+	CreatedAt    time.Time `gorm:"autoCreateTime"`
+	TimeStart    time.Time
+	TimeEnd      time.Time
 }

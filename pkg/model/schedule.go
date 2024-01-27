@@ -9,8 +9,9 @@ import (
 
 type Schedule struct {
 	gorm.Model
-	DoctorID  uuid.UUID
-	TimeStart time.Time
-	TimeEnd   time.Time
-	CreatedAt time.Time `gorm:"autoCreateTime"`
+	DoctorID    uuid.UUID
+	DoctorEmail string
+	TimeStart   time.Time
+	TimeEnd     time.Time
+	CreatedAt   time.Time `gorm:"autoCreateTime"`
 }

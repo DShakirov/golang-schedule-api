@@ -67,8 +67,9 @@ func CreateSchedule(db *gorm.DB) func(c *gin.Context) {
 		}
 		// Checking the time is not appointed
 		doctorID := c.MustGet("uuid").(uuid.UUID)
+		doctorEmail := c.MustGet("email").(string)
 		var schedules []model.Schedule
-		db.Where("doctor_id = ?", doctorID).Find(&schedules)
+		db.Where("doctor_id = ? AND doctor_emai = ?", doctorID, doctorEmail).Find(&schedules)
 		for _, s := range schedules {
 			if s.TimeStart.Before(body.TimeStart) || s.TimeEnd.After(body.TimeEnd) {
 				c.JSON(http.StatusBadRequest, gin.H{"error": "This time is already scheduled"})
@@ -78,6 +79,7 @@ func CreateSchedule(db *gorm.DB) func(c *gin.Context) {
 		//Creating schedule object
 		var schedule model.Schedule
 		schedule.DoctorID = doctorID
+		schedule.DoctorEmail = doctorEmail
 		schedule.TimeStart = body.TimeStart
 		schedule.TimeEnd = body.TimeEnd
 		if result := db.Create(&schedule); result.Error != nil {
@@ -105,7 +107,8 @@ func UpdateSchedule(db *gorm.DB) func(c *gin.Context) {
 		}
 		//Check if schedule belongs to user
 		uuidParam := c.MustGet("uuid").(uuid.UUID)
-		if uuidParam != schedule.DoctorID {
+		doctorEmail := c.MustGet("email").(string)
+		if uuidParam != schedule.DoctorID || doctorEmail != schedule.DoctorEmail {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "This schedule does not belong to you"})
 		}
 		//Retrieving request body
@@ -120,7 +123,7 @@ func UpdateSchedule(db *gorm.DB) func(c *gin.Context) {
 			return
 		}
 		var schedules []model.Schedule
-		db.Where("time_start <= ? AND time_end >= ?", body.TimeEnd, body.TimeStart).Where("doctor_id = ?", uuidParam).Find(&schedules)
+		db.Where("time_start <= ? AND time_end >= ?", body.TimeEnd, body.TimeStart).Where("doctor_id = ? AND doctor_email = ?", uuidParam, doctorEmail).Find(&schedules)
 		for _, s := range schedules {
 			if s.ID == schedule.ID {
 				continue //Do nothing with object instance
@@ -155,7 +158,8 @@ func DeleteSchedule(db *gorm.DB) func(c *gin.Context) {
 		}
 		//Check if schedule belongs to user
 		uuidParam := c.MustGet("uuid").(uuid.UUID)
-		if uuidParam != schedule.DoctorID {
+		doctorEmail := c.MustGet("email").(string)
+		if uuidParam != schedule.DoctorID || doctorEmail != schedule.DoctorEmail {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "This schedule does not belong to you"})
 		}
 		//Deleting object

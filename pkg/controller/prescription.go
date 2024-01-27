@@ -2,6 +2,7 @@ package controller
 
 import (
 	"ScheduleAPI/pkg/model"
+	"ScheduleAPI/pkg/utils"
 	"errors"
 	"net/http"
 	"time"
@@ -12,10 +13,11 @@ import (
 )
 
 type AddPrescriptionRequestBody struct {
-	PatientID uuid.UUID     `json:"patient_id"`
-	Dosage    string        `json:"dosage"`
-	Duration  time.Duration `json:"duration"`
-	DrugName  string        `json:"drug_name"`
+	PatientID    uuid.UUID     `json:"patient_id"`
+	PatientEmail string        `json:"patient_email"`
+	Dosage       string        `json:"dosage"`
+	Duration     time.Duration `json:"duration"`
+	DrugName     string        `json:"drug_name"`
 }
 
 func GetPrescriptionList(db *gorm.DB) func(c *gin.Context) {
@@ -46,7 +48,8 @@ func CreatePrescription(db *gorm.DB) func(c *gin.Context) {
 	//NOTE: Go serializes duration in nanoseconds
 	//{"dosage": "2 capsules",
 	//"duration": 1,
-	//"patient_id": "0ec638e3-c9aa-4fd3-9f6d-a738a42a9b5b"}
+	//"patient_id": "0ec638e3-c9aa-4fd3-9f6d-a738a42a9b5b",
+	//"patient_email": "patient@test.com"}
 	//USE POST METHOD
 	return func(c *gin.Context) {
 		//Retrieving request body
@@ -55,17 +58,26 @@ func CreatePrescription(db *gorm.DB) func(c *gin.Context) {
 			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
+		patientEmail := body.PatientEmail
+		validatePatientEmail := utils.IsValidEmail(patientEmail)
+		if validatePatientEmail != true {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email"})
+			return
+		}
 		//Checking user is doctor
 		isDoctor, _ := c.Get("isDoctor")
 		if isDoctor != true {
 			c.AbortWithError(http.StatusBadRequest, errors.New("Only a doctor can create prescription"))
 		}
-		//Fetching user id
+		//Fetching user id and email
 		uuidParam := c.MustGet("uuid").(uuid.UUID)
+		doctorEmail := c.MustGet("email").(string)
 		//Creating Prescription object
 		var prescription model.Prescription
 		prescription.DoctorID = uuidParam
+		prescription.DoctorEmail = doctorEmail
 		prescription.PatientID = body.PatientID
+		prescription.PatientEmail = body.PatientEmail
 		prescription.DrugName = body.DrugName
 		prescription.Duration = body.Duration
 		prescription.Dosage = body.Dosage
@@ -84,7 +96,8 @@ func UpdatePrescription(db *gorm.DB) func(c *gin.Context) {
 	//NOTE: Go serializes duration in nanoseconds
 	//{"dosage": "2 capsules",
 	//"duration": 1,
-	//"patient_id": "0ec638e3-c9aa-4fd3-9f6d-a738a42a9b5b"}
+	//"patient_id": "0ec638e3-c9aa-4fd3-9f6d-a738a42a9b5b",
+	//"patient_email": "patient@test.com"}
 	//USE PUT METHOD
 	return func(c *gin.Context) {
 		//Fetch prescription
@@ -101,15 +114,25 @@ func UpdatePrescription(db *gorm.DB) func(c *gin.Context) {
 			c.JSON(http.StatusBadRequest, gin.H{"error": "This prescription does not belong to you"})
 			return
 		}
+		//Fetching user email
+		doctorEmail := c.MustGet("email").(string)
 		//Retrieving request body
 		body := AddPrescriptionRequestBody{}
 		if err := c.BindJSON(&body); err != nil {
 			c.AbortWithError(http.StatusBadRequest, err)
 			return
 		}
+		patientEmail := body.PatientEmail
+		validatePatientEmail := utils.IsValidEmail(patientEmail)
+		if validatePatientEmail != true {
+			c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid email"})
+			return
+		}
 		//Updating Prescription object
 		prescription.DoctorID = uuidParam
+		prescription.DoctorEmail = doctorEmail
 		prescription.PatientID = body.PatientID
+		prescription.PatientEmail = body.PatientEmail
 		prescription.DrugName = body.DrugName
 		prescription.Duration = body.Duration
 		prescription.Dosage = body.Dosage

@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"ScheduleAPI/pkg/utils"
 	"errors"
 	"net/http"
 	"os"
@@ -33,5 +34,11 @@ func AuthMiddleware(db *gorm.DB) gin.HandlerFunc {
 		c.Set("uuid", id)
 		isDoctor := claims["is_doctor"].(bool) // Acess the "is_doctor" field from claims
 		c.Set("isDoctor", isDoctor)
+		userEmail := claims["email"].(string) //Acess the "email" field from claims
+		emailValidate := utils.IsValidEmail(userEmail)
+		if emailValidate != true {
+			c.AbortWithError(http.StatusUnauthorized, errors.New("Invalid email"))
+		}
+		c.Set("email", userEmail)
 	}
 }
