@@ -111,24 +111,6 @@ func CreateAppointment(db *gorm.DB) func(c *gin.Context) {
 		patientID := body.PatientID
 		utils.CreateNotification(db, notificationText, notificationType, doctorEmail, doctorID)
 		utils.CreateNotification(db, notificationText, notificationType, patientEmail, patientID)
-
-		//Creating notifications for both doctor and patient
-		//var doctor_notification model.Notification
-		//doctor_notification.Type = "Create"
-		//doctor_notification.UserID = appointment.DoctorID
-		//doctor_notification.Text = "Appointment data created"
-		//if result := db.Save(&doctor_notification); result.Error != nil {
-		//c.AbortWithError(http.StatusBadRequest, result.Error)
-		//return
-		//}
-		//var patient_notification model.Notification
-		//patient_notification.Type = "Create"
-		//patient_notification.UserID = appointment.PatientID
-		//patient_notification.Text = "Appointment data created"
-		//if result := db.Save(&patient_notification); result.Error != nil {
-		//c.AbortWithError(http.StatusBadRequest, result.Error)
-		//return
-		//}
 		c.JSON(http.StatusCreated, appointment)
 	}
 }
